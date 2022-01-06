@@ -1,7 +1,13 @@
 {
-  "name": "root",
+  "name": "@epic/root",
   "private": true,
   "devDependencies": {
-    "lerna": "^4.0.0"
+    "@webpack-cli/generators": "^2.4.1",
+    "lerna": "^4.0.0",
+    "wsrun": "^5.2.4"
+  },
+  "scripts": {
+    "build": "yarn workspaces run build:prod",
+    "dev": "wsrun --parallel start"
   }
 }

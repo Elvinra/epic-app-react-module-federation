@@ -4,47 +4,40 @@ const path = require('path');
 const webpack = require('webpack')
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
-const WorkboxWebpackPlugin = require('workbox-webpack-plugin');
-const HtmlWebpackTagsPlugin = require("html-webpack-tags-plugin");
 const { ModuleFederationPlugin } = require('webpack').container;
 const packageJsonDeps = require('./package.json')['dependencies']
 
-const PORT = 9000;
-
 const isProduction = process.env.NODE_ENV == 'production';
-const ASSET_PATH = process.env.ASSET_PATH || `http://localhost:${PORT}/`;
 
 const stylesHandler = isProduction ? MiniCssExtractPlugin.loader : 'style-loader';
 
-const remoteHosts = ["http://localhost:9001"];
+const PORT = 9001;
+const publicPath = `http://localhost:${PORT}/`;
+
 
 const config = {
     entry: './src/index',
     output: {
-        path: path.resolve(__dirname, 'dist'),
-        filename: '[name].bundle.js',
-        publicPath: ASSET_PATH
+        publicPath: publicPath
     },
     devServer: {
-        open: true,
+        open: false,
         host: 'localhost',
         port: PORT,
-        headers: {
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
-            "Access-Control-Allow-Headers":
-                "X-Requested-With, content-type, Authorization",
-        },
+    },
+    optimization: {
+        minimize: isProduction,
     },
     plugins: [
         new ModuleFederationPlugin({
-            name: 'shell',
-            library: { type: "var", name: "shell_remote" },
-            remotes: {
-                'dashboard': "dashboard",
+            name: 'dashboard',
+            filename: 'remoteEntry.js',
+            library: { type: "var", name: "dashboard" },
+            exposes: {
+                './DashboardRoutes': './src/DashboardRoutes',
             },
             shared: {
-                "react-router-dom": { singleton: true, eager: true, requiredVersion: packageJsonDeps["react-router-dom"] },
+                ...packageJsonDeps,
                 react: { singleton: true, eager: true, requiredVersion: packageJsonDeps.react },
                 "react-dom": { singleton: true, eager: true, requiredVersion: packageJsonDeps["react-dom"] }
             },
@@ -52,6 +45,11 @@ const config = {
         new HtmlWebpackPlugin({
             template: 'public/index.html',
         }),
+        new webpack.DefinePlugin({
+        })
+
+        // Add your plugins here
+        // Learn more about plugins from https://webpack.js.org/configuration/plugins/
     ],
     module: {
         rules: [
@@ -90,10 +88,8 @@ module.exports = () => {
 
         config.plugins.push(new MiniCssExtractPlugin());
 
-
-        config.plugins.push(new WorkboxWebpackPlugin.GenerateSW());
-
         config['externalsType'] = 'script';
+
         config.externals['react'] = ['https://unpkg.com/react@17/umd/react.production.min.js', 'React']
         config.externals['react-dom'] = ['https://unpkg.com/react-dom@17/umd/react-dom.production.min.js', 'ReactDOM']
     } else {
